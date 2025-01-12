@@ -1,25 +1,21 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { Provider } from 'react-redux';
+import store from './redux/store';
+import LoginPage from './components/LoginPage';
+import UserTable from './components/UserTable';
 
-function App() {
+const App = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <GoogleOAuthProvider clientId="244324809-c6qb4dd3trb7emrrkjla1uhq7fodru54.apps.googleusercontent.com">
+      <Provider store={store}>
+        <div>
+          <LoginPage />
+          <UserTable />
+        </div>
+      </Provider>
+    </GoogleOAuthProvider>
   );
-}
+};
 
 export default App;
