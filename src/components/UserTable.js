@@ -1,29 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { Table, Button, message } from 'antd';
-import axios from 'axios';
-import { gapi } from 'gapi-script';
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { Table, Button, Form , Modal, Input, message } from "antd";
+import axios from "axios";
+import { gapi } from "gapi-script";
 
 const UserTable = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [addingData, setAddingData] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const [isSheetCreated, setIsSheetCreated] = useState(false);
+  const [sheetUrl, setSheetUrl] = useState("");
+
+  const [form] = Form.useForm();
+
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
 
-  const sheetURL = 'https://api.sheetbest.com/sheets/aa3fc8bb-7fdd-4114-b156-8ef8307f549b';
-
-  const CLIENT_ID = '244324809-c6qb4dd3trb7emrrkjla1uhq7fodru54.apps.googleusercontent.com';
-  const API_KEY = 'AIzaSyCRnioBQRAtD0h2_OpECpvhOhycDSBMn2w';
-  const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+  const CLIENT_ID =
+    "244324809-c6qb4dd3trb7emrrkjla1uhq7fodru54.apps.googleusercontent.com";
+  const API_KEY = "AIzaSyCRnioBQRAtD0h2_OpECpvhOhycDSBMn2w";
+  const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
 
   // Initialize Google API Client
   useEffect(() => {
     const initGapi = () => {
-      gapi.load('client:auth2', () => {
-        gapi.client.init({
-          apiKey: API_KEY,
-          clientId: CLIENT_ID,
-          scope: SCOPES,
-        }).then(()=> console.log(gapi));
+      gapi.load("client:auth2", () => {
+        gapi.client
+          .init({
+            apiKey: API_KEY,
+            clientId: CLIENT_ID,
+            scope: SCOPES,
+          })
+          .then(() => console.log(gapi));
       });
     };
     initGapi();
@@ -32,7 +41,7 @@ const UserTable = () => {
   useEffect(() => {
     if (isLoggedIn) {
       axios
-        .get(sheetURL)
+        .get("https://api.sheetbest.com/sheets/aa3fc8bb-7fdd-4114-b156-8ef8307f549b")
         .then((res) => {
           const transformedData = res.data.map((entry) => ({
             key: entry.id,
@@ -54,70 +63,29 @@ const UserTable = () => {
           setLoading(false);
         })
         .catch((error) => {
-          console.error('Error fetching data:', error);
+          console.error("Error fetching data:", error);
           setLoading(false);
         });
     }
   }, [isLoggedIn]);
 
-  // const exportToGoogleSheet = async () => {
-  //   try {
-  //     // Authenticate with Google API
-  //     // await gapi.auth2.getAuthInstance().signIn();
+  const handleAddData = (values) => {
+    const newEntry = {
+      key: Date.now(),
+      id: Date.now().toString(),
+      ...values,
+    };
 
-  //     // Create a new Google Sheet
-  //     const response = await gapi.client.sheets.spreadsheets.create({
-  //       properties: {
-  //         title: 'Exported User Data',
-  //       },
-  //     }).then(()=> console.log("Created sheet"));
+    setData((prevData) => [...prevData, newEntry]);
+    setAddingData(false);
+    form.resetFields();
+    message.success("Data added successfully!");
+    console.log("Adding Data: " + newEntry);
+  }
 
-  //     const spreadsheetId = response.result.spreadsheetId;
-
-  //     // Prepare data for export
-  //     const headers = [
-  //       ['ID', 'First Name', 'Last Name', 'Email', 'Gender', 'City', 'Country', 'Country Code', 'State', 'Street Address', 'Job Title', 'Company Name'],
-  //     ];
-  //     const rows = data.map((item) => [
-  //       item.id,
-  //       item.first_name,
-  //       item.last_name,
-  //       item.email,
-  //       item.gender,
-  //       item.city,
-  //       item.country,
-  //       item.country_code,
-  //       item.state,
-  //       item.street_address,
-  //       item.job_title,
-  //       item.company_name,
-  //     ]);
-
-  //     const values = [...headers, ...rows];
-
-  //     // Append data to the new sheet
-  //     await gapi.client.sheets.spreadsheets.values.update({
-  //       spreadsheetId,
-  //       range: 'Sheet1',
-  //       valueInputOption: 'RAW',
-  //       resource: { values },
-  //     });
-
-  //     // Display success message and sheet link
-  //     message.success('Data exported successfully!');
-  //     window.open(`https://docs.google.com/spreadsheets/d/${spreadsheetId}`, '_blank');
-  //   } catch (error) {
-  //     console.error('Error exporting data:', error);
-  //     message.error('Failed to export data.');
-  //   }
-  // };
-
-  function exportToGoogleSheet() {
+  const handleExport = () => {
     const accessToken = gapi.auth.getToken().access_token;
-    const fileName = "User Data"; // ชื่อ Spreadsheet และ Sheet
-    const sheetName = "User Data"; // ชื่อ Sheet ภายใน Spreadsheet
-  
-    // ข้อมูลจาก Table ที่ต้องการเพิ่มลงใน Sheet
+
     const values = [
       [
         "ID",
@@ -133,7 +101,7 @@ const UserTable = () => {
         "Job Title",
         "Company Name",
         "Photo",
-      ], // Header
+      ],
       ...data.map((entry) => [
         entry.id,
         entry.first_name,
@@ -147,11 +115,10 @@ const UserTable = () => {
         entry.street_address,
         entry.job_title,
         entry.company_name,
-        entry.photo, // URL หรือข้อมูลเกี่ยวกับรูป
+        entry.photo,
       ]),
     ];
-  
-    // สร้าง Spreadsheet ใหม่
+
     fetch("https://sheets.googleapis.com/v4/spreadsheets", {
       method: "POST",
       headers: new Headers({
@@ -160,19 +127,18 @@ const UserTable = () => {
       }),
       body: JSON.stringify({
         properties: {
-          title: fileName, // ตั้งชื่อไฟล์
+          title: fileName, // Use the user-provided file name
         },
       }),
     })
       .then((res) => res.json())
       .then((spreadsheet) => {
         console.log("Spreadsheet created:", spreadsheet);
-  
         const spreadsheetId = spreadsheet.spreadsheetId;
-  
-        // เพิ่ม Sheet ใหม่พร้อมชื่อที่ระบุ
+        const sheetName = spreadsheet.sheets[0].properties.title;
+
         return fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
+          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!A1:append?valueInputOption=USER_ENTERED`,
           {
             method: "POST",
             headers: new Headers({
@@ -180,89 +146,212 @@ const UserTable = () => {
               "Content-Type": "application/json",
             }),
             body: JSON.stringify({
-              requests: [
-                {
-                  addSheet: {
-                    properties: {
-                      title: sheetName,
-                    },
-                  },
-                },
-              ],
+              range: `${sheetName}!A1`,
+              majorDimension: "ROWS",
+              values: values,
             }),
           }
         )
-          .then(() => {
-            // เพิ่มข้อมูลลงใน Sheet
-            return fetch(
-              `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!A1:append?valueInputOption=USER_ENTERED`,
-              {
-                method: "POST",
-                headers: new Headers({
-                  Authorization: `Bearer ${accessToken}`,
-                  "Content-Type": "application/json",
-                }),
-                body: JSON.stringify({
-                  range: `${sheetName}!A1`,
-                  majorDimension: "ROWS",
-                  values: values,
-                }),
-              }
-            );
-          })
           .then((res) => res.json())
           .then((response) => {
-            console.log("Data added to sheet:", response);
-            window.open(spreadsheet.spreadsheetUrl); // เปิด Spreadsheet ที่สร้าง
+            if (response.error) {
+              console.error("Error adding data to sheet:", response.error);
+            } else {
+              setIsSheetCreated(true);
+              setSheetUrl(spreadsheet.spreadsheetUrl); // Save sheet URL
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
           });
-      })
-      .catch((error) => {
-        console.error("Error:", error);
       });
-  }  
+  };
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', key: 'id' },
-    { title: 'First Name', dataIndex: 'first_name', key: 'first_name' },
-    { title: 'Last Name', dataIndex: 'last_name', key: 'last_name' },
-    { title: 'Email', dataIndex: 'email', key: 'email' },
-    { title: 'Gender', dataIndex: 'gender', key: 'gender' },
-    { title: 'City', dataIndex: 'city', key: 'city' },
-    { title: 'Country', dataIndex: 'country', key: 'country' },
-    { title: 'Country Code', dataIndex: 'country_code', key: 'country_code' },
-    { title: 'State', dataIndex: 'state', key: 'state' },
-    { title: 'Street Address', dataIndex: 'street_address', key: 'street_address' },
-    { title: 'Job Title', dataIndex: 'job_title', key: 'job_title' },
-    { title: 'Company Name', dataIndex: 'company_name', key: 'company_name' },
+    { title: "ID", dataIndex: "id", key: "id" },
+    { title: "First Name", dataIndex: "first_name", key: "first_name" },
+    { title: "Last Name", dataIndex: "last_name", key: "last_name" },
+    { title: "Email", dataIndex: "email", key: "email" },
+    { title: "Gender", dataIndex: "gender", key: "gender" },
+    { title: "City", dataIndex: "city", key: "city" },
+    { title: "Country", dataIndex: "country", key: "country" },
+    { title: "Country Code", dataIndex: "country_code", key: "country_code" },
+    { title: "State", dataIndex: "state", key: "state" },
+    { title: "Street Address", dataIndex: "street_address", key: "street_address" },
+    { title: "Job Title", dataIndex: "job_title", key: "job_title" },
+    { title: "Company Name", dataIndex: "company_name", key: "company_name" },
     {
-      title: 'Photo',
-      dataIndex: 'photo',
-      key: 'photo',
+      title: "Photo",
+      dataIndex: "photo",
+      key: "photo",
       render: (photo) => (
-        <img src={photo} alt="profile" style={{ width: '50px', borderRadius: '50%' }} />
+        <img
+          src={photo}
+          alt="profile"
+          style={{ width: "50px", borderRadius: "50%" }}
+        />
       ),
     },
   ];
 
-  if (isLoggedIn) {
-    return (
-      <div>
-        <Table
-          columns={columns}
-          dataSource={data}
-          loading={loading}
-          pagination={{ pageSize: 10 }}
-        />
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <Button type="primary" onClick={exportToGoogleSheet}>
-            Export to Google Sheet
-          </Button>
-        </div>
+  return (
+    <div>
+      <Table
+        columns={columns}
+        dataSource={data}
+        loading={loading}
+        pagination={{ pageSize: 10 }}
+      />
+      <div style={{ textAlign: "center", marginTop: "20px" }}>
+        <Button type="primary" onClick={() => setAddingData(true)}>
+          Add Data
+        </Button>
+        <Button type="primary" onClick={() => setExporting(true)}>
+          Export to Google Sheet
+        </Button>
       </div>
-    );
-  } else {
-    return null;
-  }
+
+      <Modal
+        title="Add New Data"
+        visible={addingData}
+        onCancel={() => setAddingData(false)}
+        footer={null}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleAddData}
+        >
+          <Form.Item
+            label="First Name"
+            name="first_name"
+            rules={[{ required: true, message: "Please enter the first name" }]}
+          >
+            <Input placeholder="Enter first name" />
+          </Form.Item>
+          <Form.Item
+            label="Last Name"
+            name="last_name"
+            rules={[{ required: true, message: "Please enter the last name" }]}
+          >
+            <Input placeholder="Enter last name" />
+          </Form.Item>
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[
+              { required: true, message: "Please enter the email" },
+              { type: "email", message: "Please enter a valid email" },
+            ]}
+          >
+            <Input placeholder="Enter email" />
+          </Form.Item>
+          <Form.Item
+            label="Gender"
+            name="gender"
+            rules={[{ required: true, message: "Please select gender" }]}
+          >
+            <Input placeholder="Enter gender (e.g., Male, Female)" />
+          </Form.Item>
+          <Form.Item
+            label="City"
+            name="city"
+            rules={[{ required: true, message: "Please enter the city" }]}
+          >
+            <Input placeholder="Enter city" />
+          </Form.Item>
+          <Form.Item
+            label="Country"
+            name="country"
+            rules={[{ required: true, message: "Please enter the country" }]}
+          >
+            <Input placeholder="Enter country" />
+          </Form.Item>
+          <Form.Item
+            label="Country Code"
+            name="country_code"
+            rules={[{ required: true, message: "Please enter the country code" }]}
+          >
+            <Input placeholder="Enter country code" />
+          </Form.Item>
+          <Form.Item
+            label="State"
+            name="state"
+            rules={[{ required: false, message: "Please enter the country code" }]}
+          >
+            <Input placeholder="Enter state" />
+          </Form.Item>
+          <Form.Item
+            label="Street Address"
+            name="street_address"
+            rules={[{ required: true, message: "Please enter the street address" }]}
+          >
+            <Input placeholder="Enter street address" />
+          </Form.Item>
+          <Form.Item
+            label="Job Title"
+            name="job_title"
+            rules={[{ required: true, message: "Please enter the job title" }]}
+          >
+            <Input placeholder="Enter job title" />
+          </Form.Item>
+          <Form.Item
+            label="Company Name"
+            name="company_name"
+            rules={[{ required: true, message: "Please enter the company name" }]}
+          >
+            <Input placeholder="Enter company name" />
+          </Form.Item>
+          <Form.Item
+            label="Photo"
+            name="photo"
+            rules={[{ required: true, message: 'Please enter the photo URL' }]}
+          >
+            <Input placeholder="Enter photo URL" />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit">
+              Add
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={isSheetCreated ? "Sheet Created Successfully" : "Enter File Name"}
+        visible={exporting}
+        onCancel={() => setExporting(false)}
+        footer={
+          isSheetCreated
+            ? null
+            : [
+                <Button key="cancel" onClick={() => setExporting(false)}>
+                  Cancel
+                </Button>,
+                <Button key="ok" type="primary" onClick={handleExport}>
+                  OK
+                </Button>,
+              ]
+        }
+      >
+        {isSheetCreated ? (
+          <p>
+            Your sheet was created successfully and added to your Google Drive. You can access it{" "}
+            <a href={sheetUrl} target="_blank" rel="noopener noreferrer">
+              here
+            </a>
+            .
+          </p>
+        ) : (
+          <Input
+            placeholder="Enter file name"
+            value={fileName}
+            onChange={(e) => setFileName(e.target.value)}
+          />
+        )}
+      </Modal>
+    </div>
+  );
 };
 
 export default UserTable;
