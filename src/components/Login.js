@@ -1,9 +1,10 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { GoogleLogin, googleLogout } from '@react-oauth/google';
+import { Button } from "antd";
 import { login, logout } from '../redux/authSlice';
 
-const LoginPage = () => {
+const Login = () => {
   const dispatch = useDispatch();
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
 
@@ -36,9 +37,9 @@ const LoginPage = () => {
   return (
     <div style={{ textAlign: 'center', marginBottom: '20px' }}>
       <h1>Welcome to the User List Dashboard</h1>
-      <button onClick={handleLogoutClick}>Logout</button>
+      <Button onClick={handleLogoutClick}>Logout</Button>
     </div>
   );
 };
 
-export default LoginPage;
+export default Login;

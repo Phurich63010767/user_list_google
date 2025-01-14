@@ -12,13 +12,14 @@ const UserTable = () => {
   const [fileName, setFileName] = useState("");
   const [isSheetCreated, setIsSheetCreated] = useState(false);
   const [sheetUrl, setSheetUrl] = useState("");
+  const [deletingRow, setDeletingRow] = useState(null);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
   const [form] = Form.useForm();
 
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
 
-  const CLIENT_ID =
-    "244324809-c6qb4dd3trb7emrrkjla1uhq7fodru54.apps.googleusercontent.com";
+  const CLIENT_ID = "244324809-c6qb4dd3trb7emrrkjla1uhq7fodru54.apps.googleusercontent.com";
   const API_KEY = "AIzaSyCRnioBQRAtD0h2_OpECpvhOhycDSBMn2w";
   const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
 
@@ -82,6 +83,23 @@ const UserTable = () => {
     message.success("Data added successfully!");
     console.log("Adding Data: " + newEntry);
   }
+
+  const showDeleteModal = (row) => {
+    setDeletingRow(row);
+    setDeleteModalVisible(true);
+  };
+  
+  const handleDelete = () => {
+    setData((prevData) => prevData.filter((item) => item.key !== deletingRow.key));
+    setDeleteModalVisible(false);
+    message.success(`Deleted row with ID: ${deletingRow.id}`);
+    setDeletingRow(null);
+  };
+  
+  const cancelDelete = () => {
+    setDeletingRow(null);
+    setDeleteModalVisible(false);
+  };
 
   const handleExport = () => {
     const accessToken = gapi.auth.getToken().access_token;
@@ -192,6 +210,15 @@ const UserTable = () => {
         />
       ),
     },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (text, record) => (
+        <Button danger type="primary" onClick={() => showDeleteModal(record)}>
+          Delete
+        </Button>
+      ),  
+    },
   ];
 
   return (
@@ -202,6 +229,7 @@ const UserTable = () => {
         loading={loading}
         pagination={{ pageSize: 10 }}
       />
+
       <div style={{ textAlign: "center", marginTop: "20px" }}>
         <Button type="primary" onClick={() => setAddingData(true)}>
           Add Data
@@ -210,6 +238,22 @@ const UserTable = () => {
           Export to Google Sheet
         </Button>
       </div>
+
+      <Modal
+        title="Confirm Delete"
+        visible={deleteModalVisible}
+        onOk={handleDelete}
+        onCancel={cancelDelete}
+        okText="Confirm"
+        cancelText="Cancel"
+      >
+        <p>Are you sure you want to delete this entry?</p>
+        {deletingRow && (
+          <p>
+            <strong>{deletingRow.first_name} {deletingRow.last_name}</strong>
+          </p>
+        )}
+      </Modal>
 
       <Modal
         title="Add New Data"
