@@ -1,25 +1,22 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-// ตรวจสอบสถานะการล็อกอินจาก localStorage
-const initialState = {
-  isLoggedIn: JSON.parse(localStorage.getItem('isLoggedIn')) || false,
-};
-
 const authSlice = createSlice({
   name: 'auth',
-  initialState,
+  initialState: {
+    isLoggedIn: false,
+    userInfo: null,
+  },
   reducers: {
-    login(state) {
+    login: (state, action) => {
       state.isLoggedIn = true;
-      localStorage.setItem('isLoggedIn', true); // บันทึกสถานะการล็อกอินลง localStorage
+      state.userInfo = action.payload.userInfo;
     },
-    logout(state) {
+    logout: (state) => {
       state.isLoggedIn = false;
-      localStorage.removeItem('isLoggedIn'); // ลบสถานะการล็อกอินออกจาก localStorage
+      state.userInfo = null;
     },
   },
 });
 
 export const { login, logout } = authSlice.actions;
-
 export default authSlice.reducer;

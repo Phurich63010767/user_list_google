@@ -6,11 +6,21 @@ import { login, logout } from '../redux/authSlice';
 
 const Login = () => {
   const dispatch = useDispatch();
-  const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
+  const { isLoggedIn, userInfo } = useSelector((state) => state.auth);
 
   const handleLoginSuccess = (response) => {
     console.log('Login Success:', response);
-    dispatch(login()); // อัปเดตสถานะการล็อกอินใน Redux
+    const { credential } = response; // JWT token
+    const decoded = JSON.parse(atob(credential.split('.')[1])); // Decode JWT
+    const { name, picture } = decoded;
+
+    // อัปเดต Redux state ด้วยข้อมูลผู้ใช้
+    dispatch(
+      login({
+        isLoggedIn: true,
+        userInfo: { name, picture },
+      })
+    );
   };
 
   const handleLoginFailure = (error) => {
@@ -19,7 +29,7 @@ const Login = () => {
 
   const handleLogoutClick = () => {
     googleLogout();
-    dispatch(logout()); // อัปเดตสถานะการล็อกเอาต์ใน Redux
+    dispatch(logout()); 
   };
 
   if (!isLoggedIn) {
@@ -34,10 +44,21 @@ const Login = () => {
     );
   }
 
+  const renderProfilePicture = (photo) => (
+    <img
+      src={photo}
+      alt="Profile"
+      style={{ width: '100px', height: '100px', borderRadius: '50%' }}
+    />
+  );
+
   return (
     <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-      <h1>Welcome to the User List Dashboard</h1>
-      <Button onClick={handleLogoutClick}>Logout</Button>
+      <h1>Welcome, {userInfo.name}!</h1>
+      {renderProfilePicture(userInfo.picture)}
+      <div style={{ marginTop: '20px' }}>
+        <Button onClick={handleLogoutClick}>Logout</Button>
+      </div>
     </div>
   );
 };
