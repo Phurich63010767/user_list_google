@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
-import { Table, Button, Form , Modal, Input, message } from "antd";
+import { Table, Button, Form , Modal, Input, message, Space } from "antd";
 import { initGoogleApi, fetchData, exportToGoogleSheets } from "../services/dataService";
+import Highlighter from 'react-highlight-words';
+import { SearchOutlined } from '@ant-design/icons';
 
 const UserTable = () => {
   const [data, setData] = useState(null);
@@ -13,6 +15,10 @@ const UserTable = () => {
   const [sheetUrl, setSheetUrl] = useState("");
   const [deletingRow, setDeletingRow] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [searchedColumn, setSearchedColumn] = useState('');
+
+  const searchInput = useRef(null);
 
   const [form] = Form.useForm();
 
@@ -75,19 +81,127 @@ const UserTable = () => {
     }
   };
 
+  const handleSearch = (selectedKeys, confirm, dataIndex) => {
+    confirm();
+    setSearchText(selectedKeys[0]);
+    setSearchedColumn(dataIndex);
+  };
+
+  const handleReset = (clearFilters) => {
+    clearFilters();
+    setSearchText('');
+  };
+
+  const getColumnSearchProps = (dataIndex) => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
+      <div
+        style={{
+          padding: 8,
+        }}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${dataIndex}`}
+          value={selectedKeys[0]}
+          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
+          style={{
+            marginBottom: 8,
+            display: 'block',
+          }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{
+              width: 90,
+            }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => clearFilters && handleReset(clearFilters)}
+            size="small"
+            style={{
+              width: 90,
+            }}
+          >
+            Reset
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              confirm({
+                closeDropdown: false,
+              });
+              setSearchText(selectedKeys[0]);
+              setSearchedColumn(dataIndex);
+            }}
+          >
+            Filter
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              close();
+            }}
+          >
+            close
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered) => (
+      <SearchOutlined
+        style={{
+          color: filtered ? '#1677ff' : undefined,
+        }}
+      />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex].toString().toLowerCase().includes(value.toLowerCase()),
+    filterDropdownProps: {
+      onOpenChange(open) {
+        if (open) {
+          setTimeout(() => searchInput.current?.select(), 100);
+        }
+      },
+    },
+    render: (text) =>
+      searchedColumn === dataIndex ? (
+        <Highlighter
+          highlightStyle={{
+            backgroundColor: '#ffc069',
+            padding: 0,
+          }}
+          searchWords={[searchText]}
+          autoEscape
+          textToHighlight={text ? text.toString() : ''}
+        />
+      ) : (
+        text
+      ),
+  });
+
   const columns = [
-    { title: "ID", dataIndex: "id", key: "id" },
-    { title: "First Name", dataIndex: "first_name", key: "first_name" },
-    { title: "Last Name", dataIndex: "last_name", key: "last_name" },
-    { title: "Email", dataIndex: "email", key: "email" },
-    { title: "Gender", dataIndex: "gender", key: "gender" },
-    { title: "City", dataIndex: "city", key: "city" },
-    { title: "Country", dataIndex: "country", key: "country" },
-    { title: "Country Code", dataIndex: "country_code", key: "country_code" },
-    { title: "State", dataIndex: "state", key: "state" },
-    { title: "Street Address", dataIndex: "street_address", key: "street_address" },
-    { title: "Job Title", dataIndex: "job_title", key: "job_title" },
-    { title: "Company Name", dataIndex: "company_name", key: "company_name" },
+    { title: "ID", dataIndex: "id", key: "id", sorter: (a, b) => a.id - b.id, ...getColumnSearchProps('id') },
+    { title: "First Name", dataIndex: "first_name", key: "first_name", sorter: (a, b) => a.first_name.localeCompare(b.first_name), ...getColumnSearchProps('first_name') },
+    { title: "Last Name", dataIndex: "last_name", key: "last_name", sorter: (a, b) => a.last_name.localeCompare(b.last_name), ...getColumnSearchProps('last_name') },
+    { title: "Email", dataIndex: "email", key: "email", sorter: (a, b) => a.email.localeCompare(b.email), ...getColumnSearchProps('email') },
+    { title: "Gender", dataIndex: "gender", key: "gender", sorter: (a, b) => a.gender.localeCompare(b.gender), ...getColumnSearchProps('gender') },
+    { title: "City", dataIndex: "city", key: "city", sorter: (a, b) => a.city.localeCompare(b.city), ...getColumnSearchProps('city') },
+    { title: "Country", dataIndex: "country", key: "country", sorter: (a, b) => a.country.localeCompare(b.country), ...getColumnSearchProps('country') },
+    { title: "Country Code", dataIndex: "country_code", key: "country_code", sorter: (a, b) => a.country_code.localeCompare(b.country_code), ...getColumnSearchProps('country_code') },
+    { title: "State", dataIndex: "state", key: "state", sorter: (a, b) => a.state.localeCompare(b.state), ...getColumnSearchProps('state') },
+    { title: "Street Address", dataIndex: "street_address", key: "street_address", sorter: (a, b) => a.street_address.localeCompare(b.street_address), ...getColumnSearchProps('street_address') },
+    { title: "Job Title", dataIndex: "job_title", key: "job_title", sorter: (a, b) => a.job_title.localeCompare(b.job_title), ...getColumnSearchProps('job_title') },
+    { title: "Company Name", dataIndex: "company_name", key: "company_name", sorter: (a, b) => a.company_name.localeCompare(b.company_name), ...getColumnSearchProps('company_name') },
     {
       title: "Photo",
       dataIndex: "photo",
@@ -118,6 +232,7 @@ const UserTable = () => {
         dataSource={data}
         loading={loading}
         pagination={{ pageSize: 10 }}
+        style={{ maxWidth: "90%", margin: "0 auto" }} 
       />
 
       <div style={{ textAlign: "center", marginTop: "20px" }}>
