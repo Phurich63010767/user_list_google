@@ -109,6 +109,17 @@ const UserTable = () => {
     setSearchText('');
   };
 
+  const handleExportButtonPress = () => {
+    if(isSheetCreated) {
+      setIsSheetCreated(false);
+      setSheetUrl("");
+      setExporting(true);
+    }
+    else {
+      setExporting(true);
+    }
+  }
+
   const getColumnSearchProps = (dataIndex) => ({
     filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
       <div
@@ -267,7 +278,7 @@ const UserTable = () => {
         <Button type="primary" onClick={() => setAddingData(true)}>
           Add Data
         </Button>
-        <Button type="primary" onClick={() => setExporting(true)}>
+        <Button type="primary" onClick={() => handleExportButtonPress()}>
           Export to Google Sheet
         </Button>
       </div>

@@ -16,7 +16,6 @@ const Login = () => {
         flexDirection: "column",
         alignItems: "center", 
         gap: "20px",
-        marginBottom: "20px"
       }}>
         <h1>Please Login with Google</h1>
         <div>
@@ -25,7 +24,6 @@ const Login = () => {
           onError={handleLoginFailure}
         />
         </div>
-        
       </div>
     );
   }
