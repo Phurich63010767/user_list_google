@@ -10,12 +10,22 @@ const Login = () => {
 
   if (!isLoggedIn) {
     return (
-      <div style={{ textAlign: 'center', marginTop: '50px' }}>
+      <div style={{
+        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center", 
+        gap: "20px",
+        marginBottom: "20px"
+      }}>
         <h1>Please Login with Google</h1>
-        <GoogleLogin
+        <div>
+          <GoogleLogin
           onSuccess={(response) => handleLoginSuccess(response, dispatch)}
           onError={handleLoginFailure}
         />
+        </div>
+        
       </div>
     );
   }
@@ -27,7 +37,7 @@ const Login = () => {
       style={{ width: '100px', height: '100px', borderRadius: '50%' }}
     />
   );
-
+  
   return (
     <div style={{ textAlign: 'center', marginBottom: '20px' }}>
       <h1>Welcome, {userInfo.name}!</h1>

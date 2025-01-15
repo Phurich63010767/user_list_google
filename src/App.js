@@ -4,7 +4,7 @@ import { Provider } from 'react-redux';
 import store from './redux/store';
 import Login from './components/Login';
 import UserTable from './components/UserTable';
-import { useSelector } from "react-redux";
+import { useSelector } from 'react-redux';
 
 const AppContent = () => {
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);

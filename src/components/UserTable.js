@@ -10,6 +10,7 @@ const UserTable = () => {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [addingData, setAddingData] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [fileName, setFileName] = useState("");
   const [isSheetCreated, setIsSheetCreated] = useState(false);
   const [sheetUrl, setSheetUrl] = useState("");
@@ -68,6 +69,22 @@ const UserTable = () => {
   const cancelDelete = () => {
     setDeletingRow(null);
     setDeleteModalVisible(false);
+  };
+
+  const handleResetData= () => {
+    if (isLoggedIn) {
+      fetchData()
+        .then((transformedData) => {
+          setData(transformedData);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    }
+    setResetting(false);
+  };
+  
+  const cancelResetData = () => {
+    setResetting(false);
   };
 
   const handleExport = async () => {
@@ -235,7 +252,18 @@ const UserTable = () => {
         style={{ maxWidth: "90%", margin: "0 auto" }} 
       />
 
-      <div style={{ textAlign: "center", marginTop: "20px" }}>
+      <div style={{
+          textAlign: "center",
+          marginTop: "20px",
+          display: "flex",
+          justifyContent: "center",
+          gap: "20px",
+          marginBottom: "20px"
+        }}
+      >
+        <Button danger type="primary" onClick={() => setResetting(true)}>
+          Reset Table
+        </Button>
         <Button type="primary" onClick={() => setAddingData(true)}>
           Add Data
         </Button>
@@ -243,6 +271,22 @@ const UserTable = () => {
           Export to Google Sheet
         </Button>
       </div>
+
+      <Modal
+        title="Confirm Reset Table"
+        visible={resetting}
+        onOk={handleResetData}
+        onCancel={cancelResetData}
+        okText="Confirm"
+        cancelText="Cancel"
+      >
+        <p>Are you sure you want to reset table to default?</p>
+        {deletingRow && (
+          <p>
+            <strong>{deletingRow.first_name} {deletingRow.last_name}</strong>
+          </p>
+        )}
+      </Modal>
 
       <Modal
         title="Confirm Delete"
